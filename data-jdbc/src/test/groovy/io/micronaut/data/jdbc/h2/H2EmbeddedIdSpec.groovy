@@ -25,9 +25,14 @@ import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.micronaut.data.model.query.builder.sql.Dialect
 import io.micronaut.data.repository.CrudRepository
+import io.micronaut.data.repository.jpa.criteria.UpdateSpecification
 import io.micronaut.data.tck.entities.Shipment
 import io.micronaut.data.tck.entities.ShipmentId
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
+import jakarta.persistence.criteria.CriteriaBuilder
+import jakarta.persistence.criteria.CriteriaUpdate
+import jakarta.persistence.criteria.Predicate
+import jakarta.persistence.criteria.Root
 import spock.lang.Specification
 
 import jakarta.inject.Inject
@@ -105,6 +110,40 @@ class H2EmbeddedIdSpec extends Specification {
 
         then:"all is correct"
         all.size() == 2
+
+        when:"Update field by ShipmentId query"
+        repository.updateFieldByShipmentId(id3, "test3a")
+        def updatedShipment = repository.findById(id3).orElse(null)
+        then:"Update is successful"
+        updatedShipment
+        updatedShipment.field == "test3a"
+
+        when:"Update specification by embedded id parts"
+        repository.updateAll(new UpdateSpecification<Shipment>() {
+            @Override
+            Predicate toPredicate(Root<Shipment> root, CriteriaUpdate<?> query, CriteriaBuilder criteriaBuilder) {
+                query.set("field", "test3")
+                return criteriaBuilder.and(criteriaBuilder.equal(root.join("shipmentId").get("country"), id3.country),
+                        criteriaBuilder.equal(root.join("shipmentId").get("city"), id3.city))
+            }
+        })
+        updatedShipment = repository.findById(id3).orElse(null)
+        then:"Update is successful"
+        updatedShipment
+        updatedShipment.field == "test3"
+
+        when:"Update specification by embedded id"
+        repository.updateAll(new UpdateSpecification<Shipment>() {
+            @Override
+            Predicate toPredicate(Root<Shipment> root, CriteriaUpdate<?> query, CriteriaBuilder criteriaBuilder) {
+                query.set("field", "test3-updated")
+                return criteriaBuilder.equal(root.get("shipmentId"), id3)
+            }
+        })
+        updatedShipment = repository.findById(id3).orElse(null)
+        then:"Update is successful"
+        updatedShipment
+        updatedShipment.field == "test3-updated"
 
         when:"Find by country"
         def foundByCountry = repository.findByShipmentIdCountry("g")

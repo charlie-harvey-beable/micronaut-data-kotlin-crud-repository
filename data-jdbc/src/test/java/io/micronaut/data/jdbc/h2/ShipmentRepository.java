@@ -15,10 +15,12 @@
  */
 package io.micronaut.data.jdbc.h2;
 
+import io.micronaut.data.annotation.Id;
 import io.micronaut.data.jdbc.annotation.JdbcRepository;
 import io.micronaut.data.model.CursoredPage;
 import io.micronaut.data.model.CursoredPageable;
 import io.micronaut.data.repository.PageableRepository;
+import io.micronaut.data.repository.jpa.JpaSpecificationExecutor;
 import io.micronaut.data.tck.entities.Shipment;
 import io.micronaut.data.tck.entities.ShipmentId;
 import io.micronaut.data.model.query.builder.sql.Dialect;
@@ -26,7 +28,7 @@ import io.micronaut.data.model.query.builder.sql.Dialect;
 import java.util.List;
 
 @JdbcRepository(dialect = Dialect.H2)
-public interface ShipmentRepository extends PageableRepository<Shipment, ShipmentId> {
+public interface ShipmentRepository extends PageableRepository<Shipment, ShipmentId>, JpaSpecificationExecutor<Shipment> {
 
     Shipment findByShipmentIdCountry(String country);
 
@@ -37,4 +39,6 @@ public interface ShipmentRepository extends PageableRepository<Shipment, Shipmen
     List<Shipment> findAllOrderByShipmentIdCountryAndShipmentIdCityDesc();
 
     CursoredPage<Shipment> findByShipmentIdCountry(String country, CursoredPageable pageable);
+
+    void updateFieldByShipmentId(@Id ShipmentId id, String field);
 }
